@@ -1,7 +1,7 @@
 ---
 site:
-  title: Showroom Template Demo
-  url: https://redhat-scholars.github.io/course-template
+  title: Agent Sandbox Workshop
+  url: https://www.redhat.com/en/topics/containers/sandboxed-containers
   start_page: modules::index.adoc
 
 content:
@@ -28,7 +28,7 @@ runtime:
 antora:
   extensions:
     - require: ./content/lib/dev-mode.js
-      enabled: true
+      enabled: false
 
 output:
   dir: ./www
