@@ -1,43 +1,80 @@
 = {lab_name}
 
-The `lab_name` var, known as an asciidoc attribute, above was set in `./content/antora.yml` and can be used to set the lab_name or title of your content.
-You are both free to change its value and if you prefer to use a different var name, you can change the value of `lab_name`, for example to `title` in `./content/antora.yml` and then reference it in your content as `\{title}`. +
+Red Hat build of https://github.com/kubernetes-sigs/agent-sandbox[Agent Sandbox, window=blank] provides developers with a programmable, Kubernetes-native API for running workloads in isolated environments, without requiring knowledge of the underlying sandboxing technology. Developers request a sandbox, and the platform delivers one. Whether https://docs.redhat.com/en/documentation/openshift_sandboxed_containers[OpenShift sandboxed containers, window=blank] (Kata Containers) or another runtime provides the underlying isolation, the **platform administrator** makes that choice -- not the developer.
 
-image::rhel-logo-black.jpg[rhel-logo-black,55%,55%]
+This separation of concerns means development teams can focus on building their applications while platform teams independently configure the security and isolation boundaries that meet their organization's requirements.
 
-== Variables
+Despite its name, Agent Sandbox is **not limited to AI agents**. While it is a core component of the Red Hat agentic AI stack, it works equally well for any workload that benefits from sandboxed execution: development environments, notebook servers, code runners, build agents, or any application that requires complete isolation with instant provisioning.
 
-Other vars can also be set there, such as `ssh_user` and `ssh_password`, and referenced inline in the lab content by using the `\{foo}` syntax.
+== Core architectural advantages
 
-This is another var, or asciidoc attribute, from `./content/antora.yml` {my_var}
+Under the hood, Red Hat build of Agent Sandbox is a Kubernetes-native platform and a downstream build of the upstream https://github.com/kubernetes-sigs/agent-sandbox[kubernetes-sigs/agent-sandbox, window=blank] project. It is purpose-built for scenarios that require long-running containers with stable identities, and it delivers three core advantages:
 
-== Writing your lab
+* **The Sandbox concept**: It provides additional features like expiration and aggregates multiple Kubernetes objects -- such as pods, services, and storage -- into a single manageable entity, the `Sandbox`. Future updates are expected to introduce suspend and resume capabilities to further simplify resource control.
 
-Whatever type of content you are writing we'll refer to your *content* as "your lab" in this document.
+* **Strengthened security posture**: The platform supports the Kata Containers `runtimeClass`, which allows sandboxes to execute within lightweight virtual machines (VMs), providing a hardware-assisted isolation boundary.
 
-=== Lab structure
+* **The Warm Pool concept**: By maintaining a pool of pre-prepared environments, the system enables near-instant allocation of sandboxes in **milliseconds**, effectively eliminating traditional provisioning delays.
 
-Wether you are writing a lab
+Each of these capabilities is independent. The `Sandbox` resource provides lifecycle management, stable identity, and resource aggregation for any workload without requiring Kata Containers or any specific runtime. Warm pools are an optional performance optimization for scenarios that demand near-instant provisioning. When the threat model requires hardware-level isolation -- for example when running AI-generated code or operating in multi-tenant clusters -- the platform administrator enables Kata Containers through OpenShift sandboxed containers by setting a single field in the `SandboxTemplate`. Developers and end users are not affected by this change because the API they use remains the same.
 
-* First, we will build a monolithic application already compiled as RPM packages and put it into a container. This will allow us to deploy the application, copy it between machines, and update it separately from the operating system. This process affords us a portable and easily maintained component instead of tightly coupling the application with your operating system maintenance.
+== The Sandbox CRDs
 
-* In closing we will build a second container on a different operating system version that makes an application not packaged into RPMs. This will be similar to a web application deployment, positioning the correct files at the right locations. To do this, we will pull a project from GitHub and position the component files within our container image. The purpose of this is to achieve a portable application container that can deploy on several different versions of Red Hat Enterprise Linux. This also provides the benefit of decoupling your application maintenance, which would all happen by building new containers versus operating system maintenance. The container is no longer reliant on the operating system installed on the machine where the application is deployed.
+Red Hat build of Agent Sandbox introduces four primary custom resource definitions (CRDs) that work together to manage the lifecycle, provisioning, and blueprinting of isolated workloads:
 
-. Now let's examine this cluster a bit more by describing the cluster (the `$GUID` environment variable is already set for you so you can immediately describe your individual cluster):
-+
-[source,sh,role=execute]
-----
-podman ps
-----
-+
-.Sample Output
-[source,texinfo,subs="attributes"]
-----
-CONTAINER ID  IMAGE                        COMMAND           CREATED      STATUS      PORTS                 NAMES
-2dcfee9e50c4  docker.io/library/httpd:2.4  httpd-foreground  3 hours ago  Up 3 hours  0.0.0.0:8080->80/tcp  showroom-httpd
-----
+* `Sandbox`: The core resource that declares a single, stateful, long-running pod. It provides a stable identity, persistent storage, and built-in lifecycle management for an isolated agent runtime. It also optionally provides a service and a persistent volume claim (PVC).
 
-=== Lab Access
+* `SandboxTemplate`: Acts as a reusable blueprint for creating sandboxes. It defines the pod specification, including container images and environment settings, as well as networking policies and optional service configurations to ensure consistent deployments.
 
-The terminal window to your right is *already* logged into the lab environment as the `{ssh_user}` user via `ssh`. 
-All steps of this lab are to be completed as the `{ssh_user}` user.
+* `SandboxWarmPool`: Eliminates provisioning delays by maintaining a pool of pre-provisioned sandboxes. By pre-warming these environments, the system can allocate new workloads in milliseconds, effectively bypassing the typical "cold start" wait times.
+
+* `SandboxClaim`: Used to request a specific sandbox instance from a warm pool or based on a template. It manages the allocation for a specific session and can include optional time-to-live (TTL) settings and automated shutdown behaviors to reduce resource use. Once a claim is fulfilled, the warm pool automatically reprovisions its pool.
+
+The interaction between these resources follows a logical flow:
+
+. The `SandboxWarmPool` uses a `SandboxTemplate` configuration (blueprint) to pre-provision sandboxes.
+. When the workload is required, a `SandboxClaim` is created.
+. The `SandboxClaim` requests a ready `Sandbox` from the `SandboxWarmPool`.
+. The `SandboxWarmPool` releases a `Sandbox` and proceeds to replenish its pool with a new one.
+. The `SandboxClaim` now points to the `Sandbox` that was released, allowing the user to find which sandbox is actually deployed.
+
+== Strengthening your security posture with OpenShift sandboxed containers
+
+Red Hat build of Agent Sandbox provides meaningful operational benefits on its own: lifecycle management, warm pools, and a programmable API for isolated workloads. However, without Kata Containers, the workload still runs directly on the worker node's kernel and shares operating system-level resources with other cluster processes.
+
+This shared-kernel boundary is particularly concerning for AI-driven workloads that execute generated code. A malicious actor could exploit this through a **prompt injection attack**, manipulating an AI model into generating harmful code. Without a hardware isolation boundary, such an attack could lead to a container breakout, potentially exposing sensitive cluster secrets or other workloads on the same node.
+
+https://docs.redhat.com/en/documentation/openshift_sandboxed_containers[Red Hat OpenShift sandboxed containers, window=blank] mitigates these risks by integrating Kata Containers to provide hardware-assisted isolation. OpenShift sandboxed containers encapsulates each pod within its own dedicated virtual machine (VM). This architecture ensures that even if an AI workload is compromised, the malicious activity remains confined within the VM boundary, preventing unauthorized access to the underlying worker node, sensitive cluster resources, or secrets.
+
+For further context on why standard container isolation is insufficient, refer to https://www.redhat.com/en/blog/defense-depth-strategy-agentic-ai-workloads[this article, window=blank], which highlights the importance of a defense-in-depth strategy. Agent Sandbox and Kata Containers are part of the Layer 2: runtime isolation step.
+
+== The demo scenario
+
+In this workshop, we showcase an integrated environment where users interact with an AI model via a web interface to generate and execute code snippets. The setup has three main components:
+
+* The **Chat user interface**, which allows a user to interact with the model
+* The **AI model** exposing an OpenAI API to answer queries from the user
+* A custom **agent-backend proxy** that connects the UI with the AI model and offers the possibility to run the AI model generated code
+
+There are two flows:
+
+* **Agent query**: The user types a query in the chat UI. It is directly sent to the model and the model returns an answer. In this case, the agent-backend just forwards messages back and forth and no code is actually executed, only generated.
+
+* **Code execution**: The user selects **Run** on AI-generated code. The system creates a `SandboxClaim` to instantly acquire a pre-warmed container from a `SandboxWarmPool`. The warm pool releases the `Sandbox` to run the code and simultaneously refills its pool. This mechanism eliminates cold-boot latency, ensuring that execution starts in milliseconds instead of minutes.
+
+We use this demo to contrast two security scenarios, highlighting the importance of hardware-level isolation against prompt injection attacks:
+
+* **Standard Agent Sandbox (No OpenShift sandboxed containers)**: A successful prompt injection allows the generated code to run directly on the worker node's kernel. The malicious code can successfully perform a container breakout to access sensitive cluster secrets.
+
+* **Agent Sandbox with OpenShift sandboxed containers (Kata VM)**: By using the `kata` `RuntimeClass`, the same malicious code is confined within a dedicated virtual machine. Even if the code executes, the hardware-assisted isolation boundary prevents it from reaching the host node or other cluster resources.
+
+[#guide]
+== Structure of the workshop
+
+This workshop will guide you through the installation and configuration of the Red Hat build of Agent Sandbox operator alongside OpenShift sandboxed containers on an ARO cluster. We will deploy the demo application and demonstrate the security benefits of running AI-generated code inside Kata VMs.
+
+Before starting, we suggest reading the following resources for background:
+
+* https://www.redhat.com/en/blog/introducing-red-hat-build-agent-sandbox[Introducing the Red Hat build of Agent Sandbox, window=blank]
+* https://www.redhat.com/en/blog/defense-depth-strategy-agentic-ai-workloads[Defense in depth strategy for agentic AI workloads, window=blank]
+* https://docs.redhat.com/en/documentation/openshift_sandboxed_containers[OpenShift sandboxed containers documentation, window=blank]
