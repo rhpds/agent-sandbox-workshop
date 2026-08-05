@@ -1,15 +1,14 @@
 ---
 type: showroom
+default_width: 40
+persist_url_state: true
+view_switcher:
+  enabled: true
+  default_mode: split
 tabs:
- - name: Terminal 1
-   secondary_name: Terminal 2
-   type: 'double-terminal'
- - name: Codeserver
-   type: 'codeserver'
- - name: Jupyter Lab
-   port: '9443'
-   path: '/'
- - name: Llamastack Docs
-   url: 'https://llama-stack.readthedocs.io/en/latest/'
- - name: Cats
-   url: 'https://cats.com'
+  - name: Terminal
+    type: terminal
+  - name: OpenShift Console
+    url: '%openshift_console_url%'
+  - name: Agent Sandbox Docs
+    url: 'https://docs.redhat.com/en/documentation/openshift_sandboxed_containers/1.13/html/deploying_red_hat_build_of_agent_sandbox/index'
