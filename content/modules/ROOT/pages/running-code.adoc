@@ -1,0 +1,125 @@
+= Running LLM-generated code in sandboxes
+
+In this module you will interact with the demo environment, chat with the AI model, generate code, and execute it inside sandboxes. You will also observe how the warm pool works in real time.
+
+== Verify the operator is installed
+
+Open the **OpenShift Console** tab and navigate to **Operators > Installed Operators**. Confirm that the **Agent Sandbox** operator is listed and its status shows **Succeeded**.
+
+== Explore the deployed resources
+
+The demo application is already installed and connected to an LLM. Let's look at what's running.
+
+Switch to the `llm-sandbox-demo` namespace in the OpenShift console and look at the workloads. You should see:
+
+. **agent-backend** -- the proxy deployment that connects the Chat UI to the AI model and manages sandbox execution.
+
+Now switch to the `runc-warmpool` namespace. You should see:
+
+[start=2]
+. **Pre-warmed sandbox pods** -- these are the ready-to-use sandbox pods maintained by the `SandboxWarmPool`. The pool keeps 2 replicas ready at all times.
+
+You can verify the warm pool status from the terminal:
+
+[source,bash,role=execute]
+----
+oc get sandboxwarmpool -n runc-warmpool
+----
+
+You should see output similar to:
+
+[source,text]
+----
+NAME                READY   DESIRED   AGE
+code-sandbox-pool   2       2         1h
+----
+
+== Connect to the Chat UI
+
+Open the **LLM Chat UI** tab. You should see a chat interface ready for input.
+
+== Try a simple query
+
+Let's start with a basic question that does not involve code. Type the following in the chat:
+
+[source,text,role=copypaste]
+----
+Hi, how are you?
+----
+
+The AI model responds directly. Notice that this is a simple query flow: the message goes to the agent-backend, which forwards it to the AI model, and the response streams back. **No sandbox is involved** in this interaction -- it's a regular chat.
+
+== Generate and run code
+
+Now let's ask the model to write some code. Type:
+
+[source,text,role=copypaste]
+----
+Write Python code that generates a random excuse for being late to a meeting
+----
+
+The model will generate a Python code block using `random` to pick from a list of excuses. Notice the **Run** button that appears next to the code block -- this is the sandbox execution feature.
+
+Click **Run** to execute the code.
+
+The agent-backend will:
+
+. Create a `SandboxClaim`
+. Acquire a pre-warmed sandbox from the `SandboxWarmPool`
+. Send the code to the sandbox pod
+. Return the output to the chat
+. Terminate the sandbox
+
+The output appears inline below the code block.
+
+== Watch the warm pool in action
+
+This is the key observation. We will trigger sandbox execution directly from the terminal and then check the pod state to see the refill in action.
+
+First, check the current state of the warm pool pods:
+
+[source,bash,role=execute]
+----
+oc get pods -n runc-warmpool
+----
+
+You should see 2 pods in `Running` state -- these are the pre-warmed sandboxes ready to go.
+
+Now trigger a code execution by calling the agent-backend's sandbox execute endpoint directly. This is exactly what the Chat UI's **Run** button does under the hood:
+
+[source,bash,role=execute]
+----
+CHAT_ROUTE=$(oc get route chat-ui -n web-ui -o jsonpath='{.spec.host}')
+curl -s https://${CHAT_ROUTE}/v1/sandbox/execute \
+  -H 'Content-Type: application/json' \
+  -d '{"language": "python", "code": "print(\"Hello from a sandbox!\")"}' | python3 -m json.tool
+----
+
+The output confirms the code ran successfully inside a sandbox. Now immediately check the pods again:
+
+[source,bash,role=execute]
+----
+oc get pods -n runc-warmpool
+----
+
+You will see that one of the original pods is gone (it was consumed by the execution) and a new one is already being provisioned or is already `Running`. The warm pool refills itself automatically after each claim.
+
+Try running it again to watch the cycle repeat:
+
+[source,bash,role=execute]
+----
+curl -s https://${CHAT_ROUTE}/v1/sandbox/execute \
+  -H 'Content-Type: application/json' \
+  -d '{"language": "python", "code": "import platform; print(f\"Running on {platform.node()}\")"}' | python3 -m json.tool
+----
+
+Each execution gets a fresh sandbox -- no state carries over between runs. And each time a sandbox is claimed, the pool immediately refills, ensuring the next execution is just as fast.
+
+[TIP]
+====
+You can also trigger executions from the **LLM Chat UI** tab. The same warm pool refill behavior happens regardless of how the execution is triggered.
+====
+
+== What's next?
+
+So far the sandboxes are running with a standard `runc` runtime. The code is isolated in its own pod, but that pod shares the host kernel with every other pod on the same worker node. In the next module, we will demonstrate why this level of isolation is not enough by performing a prompt injection attack.

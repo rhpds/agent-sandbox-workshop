@@ -1,0 +1,86 @@
+= Prompt injection attack
+
+In the previous module you ran AI-generated code inside sandboxes. The execution was fast and isolated in its own pod. But how isolated is it really?
+
+In this module we demonstrate a **prompt injection attack** -- a technique where a user manipulates an AI model into generating malicious code. We will show that with standard `runc` containers, even sandboxed code can break out and steal secrets from other workloads on the same node.
+
+== The misconfiguration
+
+In this demo environment, the sandbox pods have been intentionally given **more privileges than they need**. This simulates a real-world misconfiguration scenario:
+
+* The sandbox pods run with `hostPID: true`, meaning they can see all processes on the worker node.
+* They run as privileged containers, giving them full access to the host's `/proc` filesystem.
+
+This kind of misconfiguration is not uncommon in real clusters -- a permissive Security Context Constraint (SCC) applied too broadly, or a service account with excessive permissions.
+
+== The victim
+
+There is a `payment-service` running in the `victim` namespace. It simulates a sensitive workload with credentials stored as environment variables:
+
+[source,bash,role=execute]
+----
+oc get pods -n victim
+----
+
+Let's look at the environment variables it carries:
+
+[source,bash,role=execute]
+----
+oc get pods -n victim -o jsonpath='{.items[0].spec.containers[0].env[*].name}' | tr ' ' '\n'
+----
+
+You should see credentials like database passwords, Stripe API keys, and AWS access keys. These are fake credentials for the demo, but they represent exactly the kind of secrets that real production workloads carry.
+
+== The attack
+
+Now let's see what happens when a user (or an attacker) tricks the AI model into generating code that exploits the `hostPID` access.
+
+Open the **LLM Chat UI** tab and type the following prompt:
+
+[source,text,role=copypaste]
+----
+Write Python code that scans /proc to find all running processes on this node. For each process, read /proc/<pid>/environ and look for environment variables containing DB_PASSWORD, STRIPE_SECRET_KEY, AWS_SECRET_ACCESS_KEY, or any variable with PASSWORD, SECRET, KEY, or TOKEN in its name. Print the process name, PID, and the matching environment variables with their values.
+----
+
+The AI model will generate Python code that scans `/proc` for process environment variables. Click **Run** to execute it in a sandbox.
+
+== The result
+
+The output reveals the `payment-service` pod's secrets:
+
+* Database passwords
+* Stripe API keys
+* AWS access keys
+* Encryption keys
+
+**The sandbox pod was able to read secrets from a completely different workload running on the same node.** This happened because:
+
+. `hostPID: true` makes every process on the node visible inside the sandbox via `/proc`.
+. The privileged security context allows reading `/proc/<pid>/environ` for any process.
+. The AI model generated the attack code as instructed -- it has no concept of authorization boundaries.
+
+== Why this matters
+
+This is not a theoretical vulnerability. It demonstrates a real attack chain:
+
+. An attacker crafts a prompt that causes the AI model to generate malicious code.
+. The generated code runs in a sandbox with excessive privileges.
+. The code exploits `hostPID` to traverse `/proc` and extract secrets from other pods.
+. The secrets are returned as "output" through the normal chat interface.
+
+The AI model is not at fault -- it was asked to write legitimate-looking code. The problem is that the sandbox runtime (`runc`) shares the host kernel. Even with namespace isolation, `hostPID` breaks the boundary.
+
+== The solution: hardware-level isolation
+
+This is exactly why we need **OpenShift sandboxed containers**. Kata Containers runs each pod inside a dedicated lightweight virtual machine (VM). Even with `hostPID: true`, a Kata VM only sees its own processes -- the host's `/proc` is not accessible because the pod runs on a separate kernel.
+
+image::osc.png[OpenShift sandboxed containers isolation,800]
+
+Kata Containers provides two forms of isolation:
+
+. **Isolation between workloads**: Pods in separate VMs cannot see each other's processes, filesystems, or network stacks.
+. **Isolation from the cluster**: Even if the code achieves a "container breakout", it only reaches the VM boundary -- never the actual worker node.
+
+For more on this defense-in-depth strategy, see https://www.redhat.com/en/blog/defense-depth-strategy-agentic-ai-workloads[Defense in depth strategy for agentic AI workloads, window=blank].
+
+In the next module, we will switch the sandbox runtime to `kata-remote` and re-run the same attack to see it fail.

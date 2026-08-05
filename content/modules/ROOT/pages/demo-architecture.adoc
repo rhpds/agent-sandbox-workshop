@@ -1,0 +1,49 @@
+= The demo architecture
+
+In this workshop we use an integrated environment where you interact with an AI model via a web interface to generate and execute code. The setup has three main components:
+
+* The **Chat UI** -- a web interface where you type prompts and see responses
+* The **AI model** -- an LLM exposing an OpenAI-compatible API
+* The **agent-backend** -- a custom proxy that connects the UI with the AI model and provides the ability to run AI-generated code inside sandboxes
+
+== Two flows
+
+=== Flow 1: Agent query (no sandbox)
+
+When you type a question in the chat UI, the message goes through the agent-backend directly to the AI model and the response is streamed back. No sandbox is involved -- this is a simple chat interaction.
+
+image::llm.png[Agent query flow,800]
+
+. The user sends a query from the Chat UI.
+. The agent-backend forwards it to the AI model.
+. The AI model returns an answer.
+. The answer is streamed back to the Chat UI.
+
+=== Flow 2: Code execution (with sandbox)
+
+When the AI model generates code, a **Run** button appears next to the code block. Clicking it triggers sandbox-based execution:
+
+image::llm-sandbox.png[Code execution flow with sandbox,800]
+
+. The user clicks **Run** on a code block.
+. The agent-backend creates a `SandboxClaim`.
+. The claim requests a ready sandbox from the `SandboxWarmPool`.
+. The pool releases a `Sandbox` and starts refilling.
+. The code is sent to the sandbox pod for execution.
+. The output is returned to the Chat UI.
+
+This is where the warm pool advantage shines: because sandboxes are pre-provisioned, code execution starts in **milliseconds** instead of waiting for a pod to be scheduled and started.
+
+== Why sandboxes?
+
+Running AI-generated code raises immediate security questions. You are executing code that you did not write and may not have reviewed. Sandboxes provide:
+
+* **Isolation**: The code runs in a separate environment, away from your main workloads.
+* **Speed**: Thanks to the warm pool, there is no noticeable delay -- the experience feels instant.
+* **Disposability**: Each sandbox is used once and discarded. No state leaks between executions.
+
+However, as we will see in the xref:prompt-injection.adoc[prompt injection demo], the level of isolation depends entirely on the runtime. A standard `runc` container shares the host kernel with other pods on the same node. This is where OpenShift sandboxed containers (Kata Containers) comes in -- but we will get to that.
+
+== Source code
+
+The full source code for this demo is available at https://github.com/esposem/llm-agent-sandbox-demo[llm-agent-sandbox-demo, window=blank].

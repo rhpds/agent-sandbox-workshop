@@ -1,1 +1,5 @@
 * xref:index.adoc[Introduction]
+* xref:demo-architecture.adoc[The demo architecture]
+* xref:running-code.adoc[Running LLM-generated code]
+* xref:prompt-injection.adoc[Prompt injection attack]
+* xref:kata-isolation.adoc[Isolating with Kata Containers]
