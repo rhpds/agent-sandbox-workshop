@@ -8,6 +8,8 @@ view_switcher:
 tabs:
   - name: Terminal
     type: terminal
+  - name: LLM Chat UI
+    url: '%chat_ui_url%'
   - name: OpenShift Console
     url: '%openshift_console_url%'
   - name: Agent Sandbox Docs
