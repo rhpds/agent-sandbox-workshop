@@ -7,10 +7,11 @@ view_switcher:
   default_mode: split
 tabs:
   - name: Terminal
-    type: terminal
+    path: /terminal
+    port: 443
   - name: LLM Chat UI
-    url: '%chat_ui_url%'
+    url: '${chat_ui_url}'
   - name: OpenShift Console
-    url: '%openshift_console_url%'
+    url: '${openshift_console_url}'
   - name: Agent Sandbox Docs
     url: 'https://docs.redhat.com/en/documentation/openshift_sandboxed_containers/1.13/html/deploying_red_hat_build_of_agent_sandbox/index'
