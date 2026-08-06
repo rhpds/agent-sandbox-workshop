@@ -3,8 +3,40 @@
 In this workshop we use an integrated environment where you interact with an AI model via a web interface to generate and execute code. The setup has three main components:
 
 * The **Chat UI** -- a web interface where you type prompts and see responses
-* The **AI model** -- an LLM exposing an OpenAI-compatible API
+* The **AI model** -- an LLM exposing an OpenAI-compatible API (see xref:#llm-model[below])
 * The **agent-backend** -- a custom proxy that connects the UI with the AI model and provides the ability to run AI-generated code inside sandboxes
+
+[[llm-model]]
+== The LLM
+
+// RHDP workshop
+ifeval::["{azure_resource_group}" != "insert_your_rg_here"]
+The LLM is already deployed and connected to the demo application. The model in use is **granite-3-2-8b-instruct**, an open-source model from IBM served via https://github.com/rh-aiservices-bu/llm-load-test/wiki/2.-Using-LiteMaaS[LiteMaaS, window=blank]. No additional configuration is needed -- you can start using the Chat UI right away.
+endif::[]
+
+// Non-RHDP (self-serve from GitHub)
+ifeval::["{azure_resource_group}" == "insert_your_rg_here"]
+The demo application needs an LLM that exposes an **OpenAI-compatible API**. You have two options:
+
+. **Use any OpenAI-compatible endpoint** (recommended) -- set the following environment variables in the `agent-backend` Deployment:
++
+[source,yaml]
+----
+env:
+  - name: MODEL_NAME
+    value: "granite-3-2-8b-instruct"   # or any model your endpoint serves
+  - name: LLM_API_URL
+    value: "https://your-endpoint/v1"
+  - name: LLM_API_KEY
+    value: "your-api-key"
+----
++
+This works with https://docs.vllm.ai/en/latest/[vLLM, window=blank], https://github.com/rh-aiservices-bu/llm-load-test/wiki/2.-Using-LiteMaaS[LiteMaaS, window=blank], https://docs.openshift.com/ai/latest/serving_models/overview-of-model-serving.html[OpenShift AI Model Serving, window=blank], or any provider that exposes an OpenAI-compatible `/v1/chat/completions` endpoint.
+
+. **Use Google Vertex AI** -- if `LLM_API_URL` is not set, the agent-backend falls back to the Vertex AI SDK using GCP credentials. See the https://github.com/esposem/llm-agent-sandbox-demo[demo repository README, window=blank] for details.
+
+For more information on model configuration and deployment, refer to the https://github.com/esposem/llm-agent-sandbox-demo#changing-the-model[Changing the Model, window=blank] section in the demo repository.
+endif::[]
 
 == Two flows
 

@@ -8,7 +8,15 @@ Open the **OpenShift Console** tab and navigate to **Operators > Installed Opera
 
 == Explore the deployed resources
 
-The demo application is already installed and connected to an LLM. Let's look at what's running.
+// RHDP workshop
+ifeval::["{azure_resource_group}" != "insert_your_rg_here"]
+The demo application is already installed and connected to a **granite-3-2-8b-instruct** model via LiteMaaS. Let's look at what's running.
+endif::[]
+
+// Non-RHDP (self-serve from GitHub)
+ifeval::["{azure_resource_group}" == "insert_your_rg_here"]
+The demo application is already installed. Make sure you have connected it to an LLM as described in the xref:demo-architecture.adoc#llm-model[LLM section]. Let's look at what's running.
+endif::[]
 
 Switch to the `llm-sandbox-demo` namespace in the OpenShift console and look at the workloads. You should see:
 
