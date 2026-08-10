@@ -4,21 +4,20 @@ In this module you will interact with the demo environment, chat with the AI mod
 
 // RHDP workshop
 ifeval::["{azure_resource_group}" != "insert_your_rg_here"]
-== Log into the Openshift cluster
+== Log in to the OpenShift cluster
 
-Under the tab **OpenShift Console** you can directly access to the cluster.
+Open the **OpenShift Console** tab to access the cluster.
 
-image::oc-rhdp.png[Chat UI,800]
+image::oc-rhdp.png[OpenShift Console login,800]
 
-Use the following credentials:
+Use the following credentials to log in as admin:
 
-* Username: {aro_kube_username}
-* Password: {aro_kube_password}
+* Username: `{aro_kube_username}`
+* Password: `{aro_kube_password}`
 
+== Verify the operators are installed
 
-== Verify the operators is installed
-
-Navigate to **Operators > Installed Operators**. You will see that the **Agent Sandbox** and **Openshift Sandboxed Containers** operators are already installed.
+Navigate to **Operators > Installed Operators**. Confirm that the **Agent Sandbox** and **OpenShift sandboxed containers** operators are already installed.
 
 endif::[]
 
