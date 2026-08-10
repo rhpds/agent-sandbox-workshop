@@ -16,6 +16,7 @@ For background reading, see:
 
 * https://www.redhat.com/en/blog/introducing-red-hat-build-agent-sandbox[Introducing the Red Hat build of Agent Sandbox, window=blank]
 * https://www.redhat.com/en/blog/defense-depth-strategy-agentic-ai-workloads[Defense in depth strategy for agentic AI workloads, window=blank]
+* https://docs.redhat.com/en/documentation/openshift_sandboxed_containers/1.13/html/deploying_red_hat_build_of_agent_sandbox/index[Red Hat build of Agent Sandbox documentation, window=blank]
 * https://docs.redhat.com/en/documentation/openshift_sandboxed_containers[OpenShift sandboxed containers documentation, window=blank]
 ====
 
@@ -25,7 +26,7 @@ Under the hood, Red Hat build of Agent Sandbox is a Kubernetes-native platform a
 
 === Security with Kata Containers
 
-The platform supports the Kata Containers `runtimeClass`, which allows sandboxes to execute within lightweight virtual machines (VMs). This provides a hardware-assisted isolation boundary. A platform administrator enables this by setting a single field in the `SandboxTemplate` -- developers and end users are not affected because the API they use remains the same.
+Agent Sandbox supports the Kata Containers `runtimeClass`, which allows sandboxes to execute within lightweight virtual machines (VMs). This provides a hardware-assisted isolation boundary. A platform administrator enables this by setting a single field in the `SandboxTemplate` -- developers and end users are not affected because the API they use remains the same.
 
 === Speed with the Warm Pool
 
@@ -37,18 +38,19 @@ Red Hat build of Agent Sandbox introduces four primary custom resource definitio
 
 image::crds-runc.png[CRD interaction flow,800]
 
-* `SandboxTemplate`: A reusable blueprint that defines the pod specification, container images, environment settings, and optionally the `runtimeClassName` (e.g. `kata-remote`).
+* `Sandbox`: The core resource -- a single, stateful, long-running pod with stable identity. It can optionally include a service and a persistent volume claim (PVC).
+
+* `SandboxTemplate`: A reusable blueprint that defines the Sandbox specification: container images, environment settings, and optionally the `runtimeClassName` (e.g. `kata-remote`).
 
 * `SandboxWarmPool`: Maintains a pool of pre-provisioned sandboxes based on a `SandboxTemplate`. Eliminates cold-start latency by keeping environments ready.
 
 * `SandboxClaim`: Requests a sandbox from a warm pool. Once fulfilled, the claim points to the released sandbox and the pool replenishes itself.
 
-* `Sandbox`: The core resource -- a single, stateful, long-running pod with stable identity. It can optionally include a service and a persistent volume claim (PVC).
-
 The interaction flow:
 
 . The `SandboxWarmPool` references a `SandboxTemplate` to pre-provision sandboxes.
-. A `SandboxClaim` is created (either manually or by the application).
+. The `SandboxWarmPool` pre-provisions one or multiple `Sandbox` instances ready to be claimed.
+. A `SandboxClaim` is created (either manually or by an application).
 . The claim requests a ready `Sandbox` from the `SandboxWarmPool`.
 . The pool releases a `Sandbox` and refills itself with a new one.
 . The `SandboxClaim` now references the released `Sandbox`.

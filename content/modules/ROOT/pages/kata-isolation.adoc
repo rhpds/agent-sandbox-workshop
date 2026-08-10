@@ -16,13 +16,14 @@ Kata Containers takes a fundamentally different approach:
 
 With the `kata-remote` runtime class on Azure, each sandbox pod gets its own Azure VM. This is the strongest isolation boundary available.
 
+[NOTE]
+====
+On Azure, AWS, and GCP, the `kata` runtime class is also supported. It runs the VM with **nested virtualization** on the worker node, so you do not need a separate external VM instance for each sandbox. That can reduce cost compared with `kata-remote`, while still providing VM-level isolation.
+====
+
 image::llm-sandbox-kata.png[Code execution flow with Kata sandbox,800]
 
 The architecture is identical to the `runc` flow, except the sandbox pod runs inside a Kata VM instead of directly on the worker node.
-
-== Verify the OpenShift sandboxed containers operator
-
-Open the **OpenShift Console** tab and navigate to **Operators > Installed Operators**. Confirm that **OpenShift sandboxed containers** is listed alongside the Agent Sandbox operator.
 
 == Verify the Kata warm pool
 
@@ -67,7 +68,7 @@ You should see VMs created for the warm pool's sandbox pods. Each one is an isol
 
 == Re-run the attack
 
-Open the **LLM Chat UI** tab and type the **exact same prompt** from the previous module:
+Open the **LLM Chat UI** and type the **exact same prompt** from the previous module:
 
 [source,text,role=copypaste]
 ----
@@ -88,7 +89,7 @@ This time the output is completely different. The code runs, but it finds **no s
 
 [IMPORTANT]
 ====
-This demonstrates the key value of OpenShift sandboxed containers: **the platform administrator can enforce hardware-level isolation without changing the developer's API or workflow**. The `SandboxTemplate` is the only thing that changed -- a single `runtimeClassName` field.
+This demonstrates the key value of OpenShift sandboxed containers: **the platform administrator can enforce hardware-level isolation without changing the developer's API or workflow**. The `SandboxTemplate` is the only thing that changed: a single `runtimeClassName` field.
 ====
 
 == Switch back to runc (optional)

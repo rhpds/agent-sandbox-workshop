@@ -11,11 +11,13 @@ In this demo environment, the sandbox pods have been intentionally given **more 
 * The sandbox pods run with `hostPID: true`, meaning they can see all processes on the worker node.
 * They run as privileged containers, giving them full access to the host's `/proc` filesystem.
 
-This kind of misconfiguration is not uncommon in real clusters -- a permissive Security Context Constraint (SCC) applied too broadly, or a service account with excessive permissions.
+This kind of misconfiguration is not uncommon in real clusters: a permissive Security Context Constraint (SCC) could be applied too broadly, or a service account could have excessive permissions.
 
 == The victim
 
-There is a `payment-service` running in the `victim` namespace. It simulates a sensitive workload with credentials stored as environment variables:
+There is a `payment-service` running in the `victim` namespace. It simulates a sensitive workload with credentials stored as environment variables.
+
+Switch to the **Terminal** and show the pod:
 
 [source,bash,role=execute]
 ----
@@ -35,7 +37,7 @@ You should see credentials like database passwords, Stripe API keys, and AWS acc
 
 Now let's see what happens when a user (or an attacker) tricks the AI model into generating code that exploits the `hostPID` access.
 
-Open the **LLM Chat UI** tab and type the following prompt:
+Open the **LLM Chat UI** and type the following prompt:
 
 [source,text,role=copypaste]
 ----
@@ -61,14 +63,14 @@ The output reveals the `payment-service` pod's secrets:
 
 == Why this matters
 
-This is not a theoretical vulnerability. It demonstrates a real attack chain:
+We just dimostrated a real attack chain:
 
 . An attacker crafts a prompt that causes the AI model to generate malicious code.
 . The generated code runs in a sandbox with excessive privileges.
 . The code exploits `hostPID` to traverse `/proc` and extract secrets from other pods.
 . The secrets are returned as "output" through the normal chat interface.
 
-The AI model is not at fault -- it was asked to write legitimate-looking code. The problem is that the sandbox runtime (`runc`) shares the host kernel. Even with namespace isolation, `hostPID` breaks the boundary.
+The AI model is not at fault, as it was asked to write legitimate-looking code. The problem is that the sandbox runtime (`runc`) shares the host kernel. Even with namespace isolation, `hostPID` breaks the boundary.
 
 == The solution: hardware-level isolation
 
@@ -83,4 +85,4 @@ Kata Containers provides two forms of isolation:
 
 For more on this defense-in-depth strategy, see https://www.redhat.com/en/blog/defense-depth-strategy-agentic-ai-workloads[Defense in depth strategy for agentic AI workloads, window=blank].
 
-In the next module, we will switch the sandbox runtime to `kata-remote` and re-run the same attack to see it fail.
+In the next section, we will switch the sandbox runtime to `kata-remote` and re-run the same attack to see it fail.
