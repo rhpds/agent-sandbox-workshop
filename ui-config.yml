@@ -7,7 +7,7 @@ view_switcher:
   default_mode: split
 tabs:
   - name: Terminal
-    path: /terminal
+    path: /wetty
     port: 443
   - name: LLM Chat UI
     url: '${chat_ui_url}'
