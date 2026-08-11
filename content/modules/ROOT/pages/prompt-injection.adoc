@@ -28,7 +28,7 @@ Let's look at the environment variables it carries:
 
 [source,bash,role=execute]
 ----
-oc get pods -n victim -o jsonpath='{.items[0].spec.containers[0].env[*].name}' | tr ' ' '\n'
+oc get pods -n victim -o jsonpath='{.items[0].spec.containers[0].env[*]}' | tr ' ' '\n'
 ----
 
 You should see credentials like database passwords, Stripe API keys, and AWS access keys. These are fake credentials for the demo, but they represent exactly the kind of secrets that real production workloads carry.

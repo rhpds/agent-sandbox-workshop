@@ -48,8 +48,8 @@ You should see output similar to:
 
 [source,text]
 ----
-NAME                READY   DESIRED   AGE
-code-sandbox-pool   2       2         1h
+NAME                READY   AGE
+code-sandbox-pool   2       1h
 ----
 
 == Connect to the Chat UI
@@ -79,6 +79,8 @@ Write Python code that generates a random excuse for being late to a meeting
 The model will generate a Python code block using `random` to pick from a list of excuses. Notice the **Run** button that appears next to the code block -- this is the sandbox execution feature.
 
 Click **Run** to execute the code. Once it completes, you will se the output.
+
+image::execute-code.png[Expected output,800]
 
 The agent-backend will:
 
@@ -119,15 +121,6 @@ oc get pods -n runc-warmpool
 ----
 
 You will see that one of the original pods is gone (it was consumed by the execution) and a new one is already being provisioned or is already `Running`. The warm pool refills itself automatically after each claim.
-
-Try running it again to watch the cycle repeat:
-
-[source,bash,role=execute]
-----
-curl -s https://${CHAT_ROUTE}/v1/sandbox/execute \
-  -H 'Content-Type: application/json' \
-  -d '{"language": "python", "code": "import platform; print(f\"Running on {platform.node()}\")"}' | python3 -m json.tool
-----
 
 Each execution gets a fresh sandbox, no state carries over between runs. And each time a sandbox is claimed, the pool immediately refills, ensuring the next execution is just as fast.
 
