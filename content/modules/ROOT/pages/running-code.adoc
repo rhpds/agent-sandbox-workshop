@@ -8,7 +8,7 @@ ifeval::["{azure_resource_group}" != "insert_your_rg_here"]
 
 Open the **OpenShift Console** tab to access the cluster.
 
-image::oc-rhdp.png[OpenShift Console login,800]
+image::ocp-rhdp.png[OpenShift Console login,800]
 
 Use the following credentials to log in as admin:
 
