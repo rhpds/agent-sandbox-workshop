@@ -38,8 +38,8 @@ You should see:
 
 [source,text]
 ----
-NAME                READY   DESIRED   AGE
-code-sandbox-pool   2       2         1h
+NAME                READY   AGE
+code-sandbox-pool   2       1h
 ----
 
 == Switch to the Kata runtime
@@ -61,7 +61,7 @@ Since `kata-remote` creates actual Azure VMs for each sandbox, you can inspect t
 
 [source,bash,role=execute,subs=attributes+]
 ----
-az vm list -g {azure_resource_group} --query "[?contains(name, 'podvm')].\\{Name:name, Size:hardwareProfile.vmSize, State:provisioningState}" -o table
+az vm list --query "[?contains(name, 'podvm')].{Name:name, Size:hardwareProfile.vmSize, State:provisioningState}" -o table
 ----
 
 You should see VMs created for the warm pool's sandbox pods. Each one is an isolated virtual machine running a single sandbox.
