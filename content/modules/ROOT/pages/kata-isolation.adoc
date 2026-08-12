@@ -55,16 +55,16 @@ This script patches the `agent-backend` deployment to change the `SANDBOX_NAMESP
 
 Wait for the rollout to complete. The script will confirm when the agent-backend is ready.
 
-== Inspect the Azure VMs
+== Inspect the Kata VMs
 
-Since `kata` creates actual Azure VMs for each sandbox, you can inspect them with the `az` CLI:
+Since `kata` runs each sandbox inside a dedicated VM, you can verify that QEMU virtual machines are actually running on the worker nodes:
 
-[source,bash,role=execute,subs=attributes+]
+[source,bash,role=execute]
 ----
-az vm list --query "[?contains(name, 'podvm')].{Name:name, Size:hardwareProfile.vmSize, State:provisioningState}" -o table
+oc debug $(oc get nodes -l node-role.kubernetes.io/kata-oc -o name | head -1) -- chroot /host ps aux | grep qemu
 ----
 
-You should see VMs created for the warm pool's sandbox pods. Each one is an isolated virtual machine running a single sandbox.
+You should see `qemu` processes -- one per sandbox pod. Each one is a real virtual machine providing hardware-level isolation.
 
 == Re-run the attack
 
