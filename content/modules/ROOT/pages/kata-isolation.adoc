@@ -1,6 +1,6 @@
 = Isolating sandboxes with OpenShift sandboxed containers
 
-In the previous module we demonstrated how a prompt injection attack can steal secrets from other workloads when sandboxes run with a standard `runc` runtime. Now we will switch the sandbox runtime to `kata-remote` -- running each sandbox inside a dedicated virtual machine -- and prove that the same attack fails.
+In the previous module we demonstrated how a prompt injection attack can steal secrets from other workloads when sandboxes run with a standard `runc` runtime. Now we will switch the sandbox runtime to `kata` -- running each sandbox inside a dedicated virtual machine -- and prove that the same attack fails.
 
 == How Kata Containers works
 
@@ -14,11 +14,11 @@ Kata Containers takes a fundamentally different approach:
 * The VM provides a **hardware-assisted isolation boundary** -- the pod's processes, filesystem, and network are completely separated from the host.
 * Even if the pod has `hostPID: true` or runs as privileged, it only sees its own VM's processes.
 
-With the `kata-remote` runtime class on Azure, each sandbox pod gets its own Azure VM. This is the strongest isolation boundary available.
+With the `kata` runtime class on Azure, each sandbox pod gets its own Azure VM. This is the strongest isolation boundary available.
 
 [NOTE]
 ====
-On Azure, AWS, and GCP, the `kata` runtime class is also supported. It runs the VM with **nested virtualization** on the worker node, so you do not need a separate external VM instance for each sandbox. That can reduce cost compared with `kata-remote`, while still providing VM-level isolation.
+The `kata-remote` runtime class also works and can be used interchangeably with `kata`.
 ====
 
 image::llm-sandbox-kata.png[Code execution flow with Kata sandbox,800]
@@ -27,7 +27,7 @@ The architecture is identical to the `runc` flow, except the sandbox pod runs in
 
 == Verify the Kata warm pool
 
-A separate warm pool using the `kata-remote` runtime is already provisioned. Check it from the terminal:
+A separate warm pool using the `kata` runtime is already provisioned. Check it from the terminal:
 
 [source,bash,role=execute]
 ----
@@ -44,7 +44,7 @@ code-sandbox-pool   2       1h
 
 == Switch to the Kata runtime
 
-Now let's switch the agent-backend to use the `kata-remote` warm pool instead of the `runc` one. Run the following command:
+Now let's switch the agent-backend to use the `kata` warm pool instead of the `runc` one. Run the following command:
 
 [source,bash,role=execute]
 ----
@@ -57,7 +57,7 @@ Wait for the rollout to complete. The script will confirm when the agent-backend
 
 == Inspect the Azure VMs
 
-Since `kata-remote` creates actual Azure VMs for each sandbox, you can inspect them with the `az` CLI:
+Since `kata` creates actual Azure VMs for each sandbox, you can inspect them with the `az` CLI:
 
 [source,bash,role=execute,subs=attributes+]
 ----
@@ -108,7 +108,7 @@ In this workshop you have seen:
 . **Agent Sandbox** provides a Kubernetes-native API for running workloads in isolated sandboxes with instant provisioning via warm pools.
 . **Standard containers (`runc`)** share the host kernel. Misconfigurations like `hostPID` can lead to container breakout and secret theft through prompt injection attacks.
 . **OpenShift sandboxed containers (Kata Containers)** wraps each pod in a dedicated VM, providing a hardware-assisted isolation boundary that prevents these attacks -- even when the same misconfigurations exist.
-. **The switch is transparent**: changing the runtime from `runc` to `kata-remote` requires only a `SandboxTemplate` change. Developers and users see no difference in the API or workflow.
+. **The switch is transparent**: changing the runtime from `runc` to `kata` requires only a `SandboxTemplate` change. Developers and users see no difference in the API or workflow.
 
 The defense-in-depth lesson is clear: **do not rely solely on container namespaces for isolation when running untrusted or AI-generated code**. Use Kata Containers through OpenShift sandboxed containers to add a hardware-level boundary that contains even privileged workloads.
 

@@ -85,4 +85,4 @@ Kata Containers provides two forms of isolation:
 
 For more on this defense-in-depth strategy, see https://www.redhat.com/en/blog/defense-depth-strategy-agentic-ai-workloads[Defense in depth strategy for agentic AI workloads, window=blank].
 
-In the next section, we will switch the sandbox runtime to `kata-remote` and re-run the same attack to see it fail.
+In the next section, we will switch the sandbox runtime to `kata` and re-run the same attack to see it fail.

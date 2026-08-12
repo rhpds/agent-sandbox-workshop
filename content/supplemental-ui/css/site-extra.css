@@ -33,3 +33,9 @@ video {
     width: 100%;
     background-color: #131313;
 }
+
+/* wrap long lines in copypaste blocks so the text is readable */
+.doc .listingblock.copypaste pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}

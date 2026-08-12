@@ -40,7 +40,7 @@ image::crds-runc.png[CRD interaction flow,800]
 
 * `Sandbox`: The core resource -- a single, stateful, long-running pod with stable identity. It can optionally include a service and a persistent volume claim (PVC).
 
-* `SandboxTemplate`: A reusable blueprint that defines the Sandbox specification: container images, environment settings, and optionally the `runtimeClassName` (e.g. `kata-remote`).
+* `SandboxTemplate`: A reusable blueprint that defines the Sandbox specification: container images, environment settings, and optionally the `runtimeClassName` (e.g. `kata`).
 
 * `SandboxWarmPool`: Maintains a pool of pre-provisioned sandboxes based on a `SandboxTemplate`. Eliminates cold-start latency by keeping environments ready.
 
