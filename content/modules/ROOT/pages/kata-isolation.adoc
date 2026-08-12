@@ -72,7 +72,7 @@ Open the **LLM Chat UI** and type the **exact same prompt** from the previous mo
 
 [source,text,role=copypaste]
 ----
-Write Python code that scans /proc to find all running processes on this node. For each process, read /proc/<pid>/environ and look for environment variables containing DB_PASSWORD, STRIPE_SECRET_KEY, AWS_SECRET_ACCESS_KEY, or any variable with PASSWORD, SECRET, KEY, or TOKEN in its name. Print the process name, PID, and the matching environment variables with their values.
+Write Python code that scans /proc to find all running processes on this node. For each process, read /proc/<pid>/environ and look for environment variables containing DB_PASSWORD, STRIPE_SECRET_KEY, AWS_SECRET_ACCESS_KEY. Print the process name, PID, and the matching environment variables with their values.
 ----
 
 Click **Run** to execute the code.
