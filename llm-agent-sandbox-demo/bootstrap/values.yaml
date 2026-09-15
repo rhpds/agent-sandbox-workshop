@@ -1,0 +1,27 @@
+backend:
+  namespace: llm-sandbox-demo
+  image: quay.io/eesposit/agent-backend:latest
+  warmPoolName: code-sandbox-pool
+
+ui:
+  namespace: web-ui
+  image: docker.io/nginxinc/nginx-unprivileged:1.27-alpine
+
+llm:
+  model: llama-scout-17b
+  apiUrl: ""
+  apiKey: ""
+
+vertex:
+  enabled: false
+  project: ""
+  region: us-east5
+
+sandbox:
+  runcNamespace: runc-warmpool
+  kataNamespace: kata-warmpool
+
+agentSandbox:
+  channel: preview-0.9
+  sandboxImage: quay.io/eesposit/python-runtime-sandbox:latest
+  warmPoolReplicas: 2

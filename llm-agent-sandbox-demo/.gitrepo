@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/esposem/llm-agent-sandbox-demo.git
+	branch = main
+	commit = 3096863525694d6927d4f68cc8bbc4a7e7f75064
+	parent = 32185076bcb505b66ee9a095f08a95b3800b4d06
+	method = merge
+	cmdver = 0.4.9

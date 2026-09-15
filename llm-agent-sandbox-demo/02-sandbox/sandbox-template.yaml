@@ -1,0 +1,28 @@
+apiVersion: extensions.agents.x-k8s.io/v1beta1
+kind: SandboxTemplate
+metadata:
+  name: code-execution-template
+  namespace: llm-sandbox-demo
+spec:
+  podTemplate:
+    metadata:
+      labels:
+        app: code-sandbox
+    spec:
+      runtimeClassName: kata
+      containers:
+        - name: sandbox
+          image: quay.io/eesposit/python-runtime-sandbox:latest
+          ports:
+            - containerPort: 8888
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+  service: true
+  networkPolicyManagement: Managed
+  envVarsInjectionPolicy: Allowed

@@ -1,0 +1,43 @@
+apiVersion: extensions.agents.x-k8s.io/v1beta1
+kind: SandboxTemplate
+metadata:
+  name: code-execution-template-kata-hostpid
+  namespace: llm-sandbox-demo
+spec:
+  envVarsInjectionPolicy: Allowed
+  networkPolicyManagement: Managed
+  podTemplate:
+    metadata:
+      labels:
+        app: code-sandbox
+        runtime: kata
+        demo: hostpid-security
+    spec:
+      serviceAccountName: hostpid-demo-sa
+      automountServiceAccountToken: true
+      hostPID: true
+      runtimeClassName: kata
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: payment-service
+            namespaceSelector: {}
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - image: quay.io/eesposit/python-runtime-sandbox:latest
+        name: sandbox
+        securityContext:
+          privileged: true
+        ports:
+        - containerPort: 8888
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "2"
+            memory: 2Gi
+          requests:
+            cpu: 500m
+            memory: 512Mi
+  service: true
