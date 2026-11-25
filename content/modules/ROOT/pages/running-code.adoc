@@ -10,10 +10,10 @@ Open the **OpenShift Console** tab to access the cluster.
 
 image::ocp-rhdp.png[OpenShift Console login,800]
 
-Use the following credentials to log in as admin:
+Use the following credentials to log in:
 
-* Username: `{aro_kube_username}`
-* Password: `{aro_kube_password}`
+* Username: `{user}`
+* Password: `{password}`
 
 == Verify the operators are installed
 
